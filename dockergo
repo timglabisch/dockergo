@@ -1,0 +1,53 @@
+#!/bin/bash
+
+vmname="dev_ubuntu"
+port_http=80
+port_ssh=222
+port_mysql=3306
+port_xdebug=9000
+
+# just change above
+pwd=`pwd`
+dockerfile="$pwd/Dockerfile"
+
+if [ ! -f "$dockerfile" ]
+then
+    echo "File '$dockerfile' doesnt exists."
+    exit 1
+fi
+
+if [ "$1" == "run" ]
+then
+    if [ ! `sudo docker images | grep $vmname` ]
+    then
+        echo "Prepare to Build Docker VM"
+        sudo docker build -t=$vmname .
+    fi
+
+    sudo docker run \
+        -i -t \
+        -p $port_http:80 \
+        -p $port_ssh:22 \
+        -v $pwd/htdocs:/var/www \
+        $vmname
+
+    exit 0
+fi
+
+if [ "$1" == "ssh" ]
+then
+    sshpass -p "dev" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p$port_ssh root@127.0.0.1
+    exit 0
+fi
+
+if [ "$1" == "mysql" ]
+then
+    mysql -uroot -h127.0.0.1 -p$port_mysql --password="dev"
+    exit 0
+fi
+
+
+echo "useage:"
+echo "dockergo run      runs / installs the container"
+echo "dockergo ssh      ssh into the container"
+echo "dockergo mysql    mysql into the container"
